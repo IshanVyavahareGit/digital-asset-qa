@@ -2,7 +2,11 @@
 __pycache__/
 *.py[cod]
 backend/.venv/
-backend/data/            # SQLite db + uploaded images (runtime state)
+
+# SQLite db + uploaded images (runtime state)
+# NOTE: keep comments on their OWN line — git does not treat a mid-line "#"
+# as a comment, so a trailing note silently breaks the pattern.
+backend/data/
 
 # --- Node / Next.js ---
 node_modules/
