@@ -1,0 +1,19 @@
+{
+  "_note": "Logos are cropped from the real source graphics by assets/extract_sponsor_logos.py. Only predator + intel are mandatory: they appear at identical size in every Predator League graphic (bracket_1, match_announcement_2 and their _wrong variants), so those validate clean. intel_core and valorant are registered but optional — promote them into mandatory_by_type to exercise more findings (valorant is 0.83% of canvas, so it will trip the 1% too-small rule).",
+  "sponsors": [
+    { "id": "predator",   "name": "Predator",         "logo": "predator.png" },
+    { "id": "intel",      "name": "Intel",            "logo": "intel.png" },
+    { "id": "intel_core", "name": "Intel Core Ultra", "logo": "intel_core.png" },
+    { "id": "valorant",   "name": "Valorant",         "logo": "valorant.png" }
+  ],
+  "mandatory_by_type": {
+    "match_announcement": ["predator", "intel"],
+    "bracket":            ["predator", "intel"],
+    "roster_update":      []
+  },
+  "_roster_update_note": "Left empty on purpose: the three roster graphics are three unrelated tournaments (Zeus/PUBG, Team Raise/BGMI), sharing no sponsor. Anything mandatory here would be a guaranteed false 'missing'. Extract PUBG or BGMI and add it if you want to cover this type.",
+  "visibility_rules": {
+    "min_area_fraction": 0.010,
+    "comment": "A mandatory logo must occupy at least ~1% of the canvas area and sit on a background it contrasts against; otherwise it is flagged as low-visibility."
+  }
+}

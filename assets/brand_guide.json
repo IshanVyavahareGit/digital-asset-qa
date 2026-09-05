@@ -1,0 +1,20 @@
+{
+  "event": "Neon Circuit Championship 2026",
+  "tone": ["dark", "neon", "high-contrast", "futuristic"],
+  "palette": {
+    "background": "#0A0E1A",
+    "surface": "#131A2E",
+    "primary": "#00E5FF",
+    "secondary": "#FF2E97",
+    "accent": "#A855F7",
+    "text": "#F5F7FA"
+  },
+  "palette_tolerance_deltae": 18,
+  "approved_fonts": ["Rajdhani", "Orbitron", "Chakra Petch"],
+  "rules": [
+    "Backgrounds must be dark (near-black navy), never light.",
+    "Accent colours limited to neon cyan, magenta and purple from the palette.",
+    "Body and handle text must be high-contrast (light text on dark surface).",
+    "Avoid clutter: keep a clear focal hierarchy, generous spacing around handles."
+  ]
+}

@@ -1,0 +1,33 @@
+services:
+  backend:
+    build:
+      context: .                    # repo root — see backend/Dockerfile
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8001:8001"                 # 8001 because frontend expects it
+    env_file:
+      - .env                        # GEMINI_API_KEY, JWT_SECRET, GEMINI_MODEL
+    volumes:
+      - qa-data:/app/backend/data    # SQLite + uploaded images survive rebuilds
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8001/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        # Host-reachable address, NOT http://backend:8001 — the browser calls it
+        NEXT_PUBLIC_API_BASE: http://localhost:8001
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  qa-data:

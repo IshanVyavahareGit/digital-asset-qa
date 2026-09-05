@@ -1,0 +1,22 @@
+# --- Web framework ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20          # multipart/form-data for file uploads
+
+# --- Config & validation ---
+pydantic==2.12.5
+pydantic-settings==2.7.1
+
+# --- Persistence ---
+SQLAlchemy==2.0.36
+
+# --- AI / vision ---
+google-genai==2.11.0
+opencv-python-headless==4.11.0.86 # sponsor-logo detection (deterministic, pixel-exact)
+numpy==2.2.1
+pillow==11.1.0                    # image IO + canvas dimension reads
+
+# --- Auth ---
+python-jose[cryptography]==3.3.0  # JWT encode/decode
+passlib[bcrypt]==1.7.4            # password hashing
+bcrypt==4.0.1                     # pinned: passlib 1.7.4 is incompatible with bcrypt>=4.1

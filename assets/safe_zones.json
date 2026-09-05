@@ -1,0 +1,33 @@
+{
+  "_comment": "Danger zones from brief §4, as pixel rectangles per platform. The SafeZoneCheck normalizes these against the graphic's actual canvas and flags any critical text/logo whose box overlaps a danger zone.",
+  "platforms": {
+    "instagram_story": {
+      "canvas": { "w": 1080, "h": 1920 },
+      "danger_zones": [
+        { "label": "top UI (username, camera icons)", "x": 0, "y": 0, "w": 1080, "h": 250 },
+        { "label": "bottom UI (caption, CTA, reply bar)", "x": 0, "y": 1600, "w": 1080, "h": 320 },
+        { "label": "right rail (like/share/comment)", "x": 960, "y": 600, "w": 120, "h": 1000 }
+      ]
+    },
+    "youtube_thumbnail": {
+      "canvas": { "w": 1920, "h": 1080 },
+      "danger_zones": [
+        { "label": "duration badge", "x": 1580, "y": 990, "w": 340, "h": 90 },
+        { "label": "progress bar hover", "x": 0, "y": 1020, "w": 1920, "h": 60 }
+      ]
+    },
+    "x_post": {
+      "canvas": { "w": 1920, "h": 1080 },
+      "danger_zones": [
+        { "label": "feed crop - top", "x": 0, "y": 0, "w": 1920, "h": 48 },
+        { "label": "feed crop - bottom", "x": 0, "y": 1032, "w": 1920, "h": 48 },
+        { "label": "feed crop - left", "x": 0, "y": 0, "w": 48, "h": 1080 },
+        { "label": "feed crop - right", "x": 1872, "y": 0, "w": 48, "h": 1080 }
+      ]
+    },
+    "instagram_post": {
+      "canvas": { "w": 1080, "h": 1080 },
+      "danger_zones": []
+    }
+  }
+}

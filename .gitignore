@@ -1,0 +1,21 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+backend/.venv/
+backend/data/            # SQLite db + uploaded images (runtime state)
+
+# --- Node / Next.js ---
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/.turbo/
+frontend/tsconfig.tsbuildinfo
+
+# --- Secrets & env ---
+.env
+*.local
+
+# --- OS / editor ---
+.DS_Store
+.idea/
+.vscode/

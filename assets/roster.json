@@ -1,0 +1,62 @@
+{
+  "event": "QA Test Set (mixed): Predator League 2026, Owls Invitational, Grandhall Conference, Zeus Esports, Team Raise, Talent 7 Nation",
+  "_note": "Built by extracting text from the 8 graphics in assets/typo-check/. Because these are the SOURCE images, they validate as clean (no typos) — that is the correct no-false-positive baseline. Typo detection triggers when a NEW/edited graphic deviates from these correct values. teams carry a 'tag' and optional 'aliases' so short bracket labels (e.g. 'S8UL') and full names (e.g. 'S8UL Esports') both match.",
+  "teams": [
+    { "name": "S8UL Esports", "tag": "S8UL", "aliases": [], "players": [] },
+    { "name": "Heaven Esports", "tag": "HEAVEN", "aliases": [], "players": [] },
+    { "name": "Last Hope", "tag": "LAST HOPE", "aliases": [], "players": [] },
+    { "name": "Gangan Galaxy", "tag": "GANGAN GALAXY", "aliases": [], "players": [] },
+    { "name": "4KOB", "tag": "4KOB", "aliases": ["4KIDSN18ABY"], "players": [] },
+    { "name": "GGEZ", "tag": "GGEZ", "aliases": [], "players": [] },
+    { "name": "TRS", "tag": "TRS", "aliases": [], "players": [] },
+    { "name": "Asterisk", "tag": "ASTERISK", "aliases": [], "players": [] },
+
+    { "name": "Zeus Esports", "tag": "ZEUS", "aliases": [], "players": ["Zyol", "Godless", "Abley", "Icy"] },
+    { "name": "Team Raise", "tag": "RAISE", "aliases": [], "players": ["Ryzen", "Vortex", "Flame", "Toxic", "Zexo"] },
+    { "name": "Talent 7 Nation", "tag": "37N", "aliases": ["X9"], "players": ["Max", "Silva", "Lynx", "Melvin"] },
+
+    { "name": "Allentown", "tag": "ALLENTOWN", "aliases": [], "players": [] },
+    { "name": "Box Out", "tag": "BOX OUT", "aliases": [], "players": [] },
+    { "name": "Harrisburg", "tag": "HARRISBURG", "aliases": [], "players": [] },
+    { "name": "Knightstown", "tag": "KNIGHTSTOWN", "aliases": [], "players": [] },
+    { "name": "Lincoln Tech", "tag": "LINCOLN TECH", "aliases": [], "players": [] },
+    { "name": "Montclair", "tag": "MONTCLAIR", "aliases": [], "players": [] },
+    { "name": "Rainier", "tag": "RAINIER", "aliases": [], "players": [] },
+    { "name": "Turner Point", "tag": "TURNER POINT", "aliases": [], "players": [] }
+  ],
+  "matches": [
+    {"team_a":"Gangan Galaxy","team_b":"GGEZ","time_label":"","time_utc":""},
+    {"team_a":"TRS","team_b":"4KOB","time_label":"","time_utc":""},
+    {"team_a":"Heaven Esports","team_b":"S8UL","time_label":"","time_utc":""},
+    {"team_a":"Asterisk","team_b":"Last Hope","time_label":"","time_utc":""},
+    {"team_a":"GGEZ","team_b":"TRS","time_label":"","time_utc":""},
+    {"team_a":"S8UL","team_b":"Asterisk","time_label":"","time_utc":""},
+    {"team_a":"GGEZ","team_b":"S8UL","time_label":"","time_utc":""},
+    {"team_a":"Winner of Upper Bracket Final","team_b":"Winner of Lower Bracket Final","time_label":"","time_utc":""},
+    {"team_a":"Gangan Galaxy","team_b":"4KOB","time_label":"","time_utc":""},
+    {"team_a":"Heaven Esports","team_b":"Last Hope","time_label":"","time_utc":""},
+    {"team_a":"Asterisk","team_b":"Gangan Galaxy","time_label":"","time_utc":""},
+    {"team_a":"TRS","team_b":"Last Hope","time_label":"","time_utc":""},
+    {"team_a":"Asterisk","team_b":"TRS","time_label":"","time_utc":""},
+    {"team_a":"Loser of Upper Bracket Final","team_b":"Winner of Lower Bracket Round 3","time_label":"","time_utc":""},
+
+    {"team_a":"Allentown","team_b":"Box Out","time_label":"1:00 PM","time_utc":"","round":"Owls Invitational — Round 1 (seeds 1v2)"},
+    {"team_a":"Harrisburg","team_b":"Knightstown","time_label":"2:00 PM","time_utc":"","round":"Owls Invitational — Round 1 (seeds 3v4)"},
+    {"team_a":"Lincoln Tech","team_b":"Montclair","time_label":"3:00 PM","time_utc":"","round":"Owls Invitational — Round 1 (seeds 5v6)"},
+    {"team_a":"Rainier","team_b":"Turner Point","time_label":"4:00 PM","time_utc":"","round":"Owls Invitational — Round 1 (seeds 7v8)"},
+    {"team_a":"Allentown","team_b":"Box Out","time_label":"5:00 PM","time_utc":"","round":"Owls Invitational — Round 1 (seeds 9v10)"},
+    {"team_a":"Harrisburg","team_b":"Knightstown","time_label":"6:00 PM","time_utc":"","round":"Owls Invitational — Round 1 (seeds 11v12)"},
+    {"team_a":"Lincoln Tech","team_b":"Montclair","time_label":"7:00 PM","time_utc":"","round":"Owls Invitational — Round 1 (seeds 13v14)"},
+    {"team_a":"Rainier","team_b":"Turner Point","time_label":"8:00 PM","time_utc":"","round":"Owls Invitational — Round 1 (seeds 15v16)"},
+
+    {"team_a":"Allentown","team_b":"Box Out","time_label":"1:00 PM","time_utc":"","round":"Owls Invitational — Round 2"},
+    {"team_a":"Harrisburg","team_b":"Knightstown","time_label":"2:00 PM","time_utc":"","round":"Owls Invitational — Round 2"},
+    {"team_a":"Lincoln Tech","team_b":"Montclair","time_label":"3:00 PM","time_utc":"","round":"Owls Invitational — Round 2"},
+    {"team_a":"Rainier","team_b":"Turner Point","time_label":"4:00 PM","time_utc":"","round":"Owls Invitational — Round 2"},
+
+    {"team_a":"Allentown","team_b":"Box Out","time_label":"1:00 PM","time_utc":"","round":"Owls Invitational — Round 3 (semifinal)"},
+    {"team_a":"Harrisburg","team_b":"Knightstown","time_label":"2:00 PM","time_utc":"","round":"Owls Invitational — Round 3 (semifinal)"},
+
+    {"team_a":"Allentown","team_b":"Box Out","time_label":"1:00 PM","time_utc":"","round":"Owls Invitational — Round 4 (final)"}
+  ]
+}

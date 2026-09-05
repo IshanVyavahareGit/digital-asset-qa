@@ -1,0 +1,19 @@
+# Never bake secrets or local state into an image
+**/.env
+**/.env.*
+backend/data/
+backend/.venv/
+
+# Build artefacts and deps — reinstalled inside the image
+**/node_modules/
+frontend/.next/
+frontend/out/
+frontend/tsconfig.tsbuildinfo
+**/__pycache__/
+**/*.py[cod]
+
+# Not needed at runtime
+.git/
+.gitignore
+*.md
+postman/

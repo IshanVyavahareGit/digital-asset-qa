@@ -1,0 +1,537 @@
+{
+  "info": {
+    "name": "Esports Visual QA — Backend",
+    "_postman_id": "e5f1c2a0-1111-4aaa-9bbb-000000000001",
+    "description": "End-to-end tests for the Automated Visual QA backend.\n\nRUN THE BACKEND FIRST (see README of this collection folder):\n  cd backend\n  python3 -m venv .venv && source .venv/bin/activate\n  pip install -r requirements.txt\n  uvicorn app.main:app --reload --port 8000\n\nThe server auto-creates the SQLite DB and seeds two users:\n  manager@tec.dev / manager123   (can upload, evaluate, override)\n  designer@tec.dev / designer123  (read-only)\n\nHOW TO USE THIS COLLECTION:\n  1. Run '01 Auth > Login (manager)' first — it saves {{managerToken}}.\n  2. Run '02 Tier 1 > Upload & Evaluate' — it saves {{reviewId}} and {{findingId}}.\n  3. Then run any other request; they chain off those saved variables.\n\nFILE UPLOADS: the file requests point at assets/graphics/*.png via an absolute\n'src' path. If Postman shows the file as missing, click the request's Body tab and\nre-select the file from the repo's assets/graphics folder.\n\nNOTE ON AI CHECKS: without GEMINI_API_KEY the typo/roster and design/theme checks\nreport status 'failed' (by design) and the sponsor + safe-zone checks still run.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "assetsDir", "value": "/Users/ishanvyavahare/Local Documents/FullStackProjects/assets/graphics" },
+    { "key": "managerToken", "value": "" },
+    { "key": "designerToken", "value": "" },
+    { "key": "reviewId", "value": "" },
+    { "key": "graphicId", "value": "" },
+    { "key": "findingId", "value": "" },
+    { "key": "managerFindingId", "value": "" },
+    { "key": "batchId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "00 Meta",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] },
+            "description": "Liveness probe. Expect 200 {\"status\":\"ok\"}. Use this to confirm the server is up before anything else."
+          }
+        },
+        {
+          "name": "Demo cost (running Gemini spend)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/meta/cost", "host": ["{{baseUrl}}"], "path": ["meta", "cost"] },
+            "description": "Gemini token usage + estimated USD cost. Returns `total` (lifetime, from an append-only ledger that survives BOTH restarts and deletion of graphics) and `since_restart` (this process only). USD is frozen at each call's model price, so switching models doesn't distort history. Reads 0 until you run evaluations with GEMINI_API_KEY set."
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 Auth",
+      "item": [
+        {
+          "name": "Login (manager)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('managerToken', j.access_token);",
+                  "pm.test('role is manager', () => pm.expect(j.user.role).to.eql('manager'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"manager@tec.dev\",\n  \"password\": \"manager123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "description": "Authenticates the seeded manager and SAVES the JWT to {{managerToken}}. Run this first — most other requests need it."
+          }
+        },
+        {
+          "name": "Login (designer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('designerToken', pm.response.json().access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"designer@tec.dev\",\n  \"password\": \"designer123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "description": "Authenticates the seeded designer (read-only role) and SAVES {{designerToken}}. Used to prove role gating and the designer view."
+          }
+        },
+        {
+          "name": "Who am I",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] },
+            "description": "Returns the current user for the supplied token. Confirms the Bearer token is valid."
+          }
+        },
+        {
+          "name": "Login (wrong password) — expect 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"manager@tec.dev\",\n  \"password\": \"nope\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "description": "Negative test: bad credentials must return 401, not leak which field was wrong."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Tier 1 — Upload & Evaluate",
+      "item": [
+        {
+          "name": "Upload & evaluate (g09 — missing sponsor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('reviewId', j.id);",
+                  "if (j.findings && j.findings.length) pm.collectionVariables.set('findingId', j.findings[0].id);",
+                  "pm.test('has a verdict', () => pm.expect(['pass','needs_changes','fail']).to.include(j.verdict));",
+                  "pm.test('sponsor check ran', () => pm.expect(j.check_runs.map(c=>c.check_type)).to.include('sponsor_audit'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "{{assetsDir}}/g09_match_announcement.png" },
+                { "key": "graphic_type", "value": "match_announcement", "type": "text" },
+                { "key": "platform", "value": "youtube_thumbnail", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/graphics", "host": ["{{baseUrl}}"], "path": ["graphics"] },
+            "description": "CORE Tier 1 flow. Manager uploads one graphic + selects type/platform; the pipeline runs and returns the full review.\n\ng09 has a seeded MISSING sponsor, so even without a Gemini key you get a critical finding + 'fail' verdict from the deterministic OpenCV check. Saves {{reviewId}} and {{findingId}}.\n\nInspect the response: findings[] each have bbox (0..1 fractions), severity, suggested_fix, source, status; check_runs[] show per-check health (typo/design = 'failed' if no key)."
+          }
+        },
+        {
+          "name": "Upload & evaluate (g08 — typo, needs GEMINI key)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "{{assetsDir}}/g08_match_announcement.png" },
+                { "key": "graphic_type", "value": "match_announcement", "type": "text" },
+                { "key": "platform", "value": "instagram_story", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/graphics", "host": ["{{baseUrl}}"], "path": ["graphics"] },
+            "description": "g08 has a seeded HANDLE TYPO ('Sp3ctr3' instead of 'Sp3ctre'). With GEMINI_API_KEY set, the typo/roster check flags it as critical with a box on the handle. Without a key, typo_roster reports 'failed' (honest) and no typo finding appears."
+          }
+        },
+        {
+          "name": "Get review by id",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "{{reviewId}}"] },
+            "description": "Fetch the full review (findings + boxes + check_runs + verdict) for the workspace. This is what the frontend loads on the review page and after a refresh (persistence check)."
+          }
+        },
+        {
+          "name": "List reviews (triage, worst-first)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/reviews", "host": ["{{baseUrl}}"], "path": ["reviews"] },
+            "description": "Lightweight summaries sorted fail → needs_changes → pass, with critical/warning counts. Powers the dashboard and batch triage."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Tier 1 — Negative / role gating",
+      "item": [
+        {
+          "name": "Designer upload — expect 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('403 Forbidden', () => pm.response.to.have.status(403));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{designerToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "{{assetsDir}}/g01_match_announcement.png" },
+                { "key": "graphic_type", "value": "match_announcement", "type": "text" },
+                { "key": "platform", "value": "instagram_story", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/graphics", "host": ["{{baseUrl}}"], "path": ["graphics"] },
+            "description": "Role gating: a designer must NOT be able to upload/evaluate. Run 'Login (designer)' first. Expect 403. (If {{designerToken}} is empty you'll get 401 instead.)"
+          }
+        },
+        {
+          "name": "Invalid graphic_type — expect 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('422 Unprocessable', () => pm.response.to.have.status(422));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "{{assetsDir}}/g01_match_announcement.png" },
+                { "key": "graphic_type", "value": "poster", "type": "text" },
+                { "key": "platform", "value": "instagram_story", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/graphics", "host": ["{{baseUrl}}"], "path": ["graphics"] },
+            "description": "Validation: an unknown graphic_type is rejected with 422 before any processing."
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Tier 2 — HITL overrides (manager)",
+      "item": [
+        {
+          "name": "Dismiss a finding",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('verdict recomputed', () => pm.expect(['pass','needs_changes','fail']).to.include(j.verdict));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{managerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"dismissed\"\n}" },
+            "url": { "raw": "{{baseUrl}}/findings/{{findingId}}", "host": ["{{baseUrl}}"], "path": ["findings", "{{findingId}}"] },
+            "description": "Manager dismisses an AI finding. The whole review is returned with the verdict RECOMPUTED (dismissed findings no longer count). Uses {{findingId}} saved by the g09 upload."
+          }
+        },
+        {
+          "name": "Edit a finding (text + severity)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{managerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Sponsor logo missing — confirmed by manager\",\n  \"severity\": \"warning\",\n  \"suggested_fix\": \"Designer to add the Pulse Energy logo bottom-left\"\n}" },
+            "url": { "raw": "{{baseUrl}}/findings/{{findingId}}", "host": ["{{baseUrl}}"], "path": ["findings", "{{findingId}}"] },
+            "description": "Manager edits an AI finding's text/severity. Status flips to 'edited' automatically and the verdict recomputes. (Re-run the g09 upload first if you already dismissed this finding.)"
+          }
+        },
+        {
+          "name": "Add manager finding (pin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "const mine = j.findings.filter(f => f.source === 'manager');",
+                  "if (mine.length) pm.collectionVariables.set('managerFindingId', mine[mine.length-1].id);",
+                  "pm.test('manager finding present', () => pm.expect(mine.length).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{managerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Kerning on 'VS' looks off\",\n  \"severity\": \"warning\",\n  \"is_pin\": true,\n  \"bbox\": { \"x\": 0.5, \"y\": 0.4, \"w\": 0, \"h\": 0 }\n}" },
+            "url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}/findings", "host": ["{{baseUrl}}"], "path": ["reviews", "{{reviewId}}", "findings"] },
+            "description": "Manager drops a PIN (a point; w=h=0) with a comment. Stored with source='manager'. Saves {{managerFindingId}} for the delete test. Drawing a box instead = send a bbox with non-zero w/h and is_pin=false."
+          }
+        },
+        {
+          "name": "Delete manager finding",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/findings/{{managerFindingId}}", "host": ["{{baseUrl}}"], "path": ["findings", "{{managerFindingId}}"] },
+            "description": "Deletes a MANAGER-added finding. (AI findings can only be dismissed, not deleted — try {{findingId}} here and you'll get 400, which is the audit-trail guardrail.)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Tier 2 — Designer read-only view",
+      "item": [
+        {
+          "name": "Designer gets the review",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{designerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "{{reviewId}}"] },
+            "description": "Designer CAN read the reviewed feedback (which findings stand, manager edits, manager notes) — same payload the read-only designer view renders. Run 'Login (designer)' first."
+          }
+        },
+        {
+          "name": "Designer tries to override — expect 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('403 Forbidden', () => pm.response.to.have.status(403));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{designerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"dismissed\"\n}" },
+            "url": { "raw": "{{baseUrl}}/findings/{{findingId}}", "host": ["{{baseUrl}}"], "path": ["findings", "{{findingId}}"] },
+            "description": "A designer must not be able to mutate findings. Expect 403."
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Tier 3 — Batch mode",
+      "item": [
+        {
+          "name": "Create batch (4 graphics)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('batchId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "files", "type": "file", "src": "{{assetsDir}}/g01_match_announcement.png" },
+                { "key": "graphic_types", "value": "match_announcement", "type": "text" },
+                { "key": "platforms", "value": "instagram_story", "type": "text" },
+                { "key": "files", "type": "file", "src": "{{assetsDir}}/g09_match_announcement.png" },
+                { "key": "graphic_types", "value": "match_announcement", "type": "text" },
+                { "key": "platforms", "value": "youtube_thumbnail", "type": "text" },
+                { "key": "files", "type": "file", "src": "{{assetsDir}}/g11_roster_update.png" },
+                { "key": "graphic_types", "value": "roster_update", "type": "text" },
+                { "key": "platforms", "value": "instagram_story", "type": "text" },
+                { "key": "files", "type": "file", "src": "{{assetsDir}}/g15_roster_update.png" },
+                { "key": "graphic_types", "value": "roster_update", "type": "text" },
+                { "key": "platforms", "value": "instagram_story", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/batch", "host": ["{{baseUrl}}"], "path": ["batch"] },
+            "description": "Uploads several graphics at once. Returns immediately with a queued BatchJob (saves {{batchId}}); processing happens in a bounded async queue. The three form fields (files / graphic_types / platforms) are aligned by index. Poll the next request for progress."
+          }
+        },
+        {
+          "name": "Get batch status (poll)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/batch/{{batchId}}", "host": ["{{baseUrl}}"], "path": ["batch", "{{batchId}}"] },
+            "description": "Returns status (queued|processing|done), completed/total counts, and the review summaries sorted worst-first for the triage dashboard. Send repeatedly until status='done'."
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Tier 3 — Re-check loop",
+      "item": [
+        {
+          "name": "Submit a revised version (diff)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "{{assetsDir}}/g02_match_announcement.png" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}/recheck", "host": ["{{baseUrl}}"], "path": ["reviews", "{{reviewId}}", "recheck"] },
+            "description": "Uploads a 'fixed' version against {{reviewId}} (reuses its type/platform, stored as version 2). Returns the new review PLUS a diff: resolved / persisting / new_findings. Since {{reviewId}} is the g09 missing-sponsor graphic and g02 is clean, the missing-sponsor finding should appear under 'resolved'. Designers may also call this."
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Tier 3 — Theme learning (references)",
+      "item": [
+        {
+          "name": "Upload reference graphics",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "files", "type": "file", "src": "{{assetsDir}}/g01_match_announcement.png" },
+                { "key": "files", "type": "file", "src": "{{assetsDir}}/g04_roster_update.png" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/reference-graphics", "host": ["{{baseUrl}}"], "path": ["reference-graphics"] },
+            "description": "Manager registers approved 'gold standard' graphics. The design/theme check can then calibrate against these (passed to Gemini as extra visual context) in addition to the written brand guide."
+          }
+        },
+        {
+          "name": "List reference graphics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/reference-graphics", "host": ["{{baseUrl}}"], "path": ["reference-graphics"] },
+            "description": "Lists the approved reference graphics currently registered."
+          }
+        },
+        {
+          "name": "Upload WITH theme calibration",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "{{assetsDir}}/g12_match_announcement.png" },
+                { "key": "graphic_type", "value": "match_announcement", "type": "text" },
+                { "key": "platform", "value": "youtube_thumbnail", "type": "text" },
+                { "key": "use_reference_theme", "value": "true", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/graphics", "host": ["{{baseUrl}}"], "path": ["graphics"] },
+            "description": "Same upload endpoint, but use_reference_theme=true makes the design/theme check calibrate against the registered references. g12 has a seeded OFF-PALETTE (light) background, which the theme check should flag (needs GEMINI_API_KEY)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Cleanup / Delete",
+      "item": [
+        {
+          "name": "Delete review by id",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "{{reviewId}}"] },
+            "description": "Deletes the review at {{reviewId}} — its graphic, image file on disk, and all findings/check-runs (cascade). Manager only (designer gets 403)."
+          }
+        },
+        {
+          "name": "Delete graphic by id",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/graphics/{{graphicId}}", "host": ["{{baseUrl}}"], "path": ["graphics", "{{graphicId}}"] },
+            "description": "Deletes a single graphic by its id (same cascade + file cleanup). Set {{graphicId}} from a review's graphic.id, or just use 'Delete review by id'."
+          }
+        },
+        {
+          "name": "Delete ALL graphics (reset)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/graphics", "host": ["{{baseUrl}}"], "path": ["graphics"] },
+            "description": "Wipes ALL graphics/reviews/findings and their image files. Returns {\"deleted\": N}. Handy to reset between demo runs."
+          }
+        },
+        {
+          "name": "Delete ALL reference graphics",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{managerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/reference-graphics", "host": ["{{baseUrl}}"], "path": ["reference-graphics"] },
+            "description": "Removes all registered theme-learning reference graphics and their files."
+          }
+        }
+      ]
+    }
+  ]
+}
