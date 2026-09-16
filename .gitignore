@@ -23,3 +23,8 @@ frontend/tsconfig.tsbuildinfo
 .DS_Store
 .idea/
 .vscode/
+
+# --- Personal reference docs (kept local, not part of the deliverable) ---
+# Root-level markdown only, so postman/README.md and any future nested docs stay tracked.
+/*.md
+!/README.md
