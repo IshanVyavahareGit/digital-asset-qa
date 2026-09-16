@@ -67,6 +67,9 @@ uvicorn app.main:app --reload --port 8001
 cd frontend && npm install && npm run dev
 ```
 
+The frontend defaults to `http://localhost:8001`, so it needs no configuration. If you move
+either service, copy `frontend/.env.example` to `frontend/.env.local` and set the port there.
+
 Open **http://localhost:3000**. Two accounts are seeded on first boot:
 
 | Role | Email | Password | Can do |

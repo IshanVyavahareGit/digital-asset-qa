@@ -11,8 +11,10 @@ import type {
   VersionItem,
 } from "./types";
 
+// Default matches the port the backend actually runs on, so a fresh clone works
+// with no config. Override via frontend/.env.local if you move either service.
 export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8001";
 
 const TOKEN_KEY = "vqa_token";
 
