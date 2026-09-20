@@ -18,6 +18,7 @@ import { VerdictBadge } from "@/components/VerdictBadge";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ApiError, imageUrl } from "@/lib/api";
+import { useFileDrop } from "@/lib/useFileDrop";
 import { useRecheck, useReview } from "@/lib/hooks";
 import { CHECK_LABEL, SEVERITY_META, cn } from "@/lib/utils";
 import type { Finding, RecheckResult } from "@/lib/types";
@@ -39,6 +40,7 @@ function Recheck() {
   const [preview, setPreview] = useState<string | null>(null);
   const [result, setResult] = useState<RecheckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { dragOver, dropHandlers } = useFileDrop((fs) => choose(fs[0] ?? null));
 
   if (isLoading || !original) return <Skeleton className="h-96 w-full" />;
 
@@ -91,12 +93,13 @@ function Recheck() {
           >
             <div
               onClick={() => inputRef.current?.click()}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                choose(e.dataTransfer.files?.[0] ?? null);
-              }}
-              className="flex min-h-[240px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-4 text-center hover:border-primary/50"
+              {...dropHandlers}
+              className={cn(
+                "flex min-h-[240px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition-colors",
+                dragOver
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-primary/50",
+              )}
             >
               <input
                 ref={inputRef}
@@ -114,7 +117,13 @@ function Recheck() {
               ) : (
                 <>
                   <UploadCloud className="mb-2 h-8 w-8 text-primary" />
-                  <p className="text-sm">Drop the revised graphic</p>
+                  <p className="text-sm">
+                    {dragOver ? (
+                      <span className="font-medium text-primary">Drop to upload</span>
+                    ) : (
+                      "Drop the revised graphic"
+                    )}
+                  </p>
                   <p className="mt-1 text-xs text-muted">
                     Same type & platform as the original
                   </p>

@@ -7,8 +7,9 @@ import { Layers, X, ChevronDown } from "lucide-react";
 
 import { Button } from "./ui/Button";
 import { useCreateBatch } from "@/lib/hooks";
-import { GRAPHIC_TYPES, PLATFORMS } from "@/lib/utils";
+import { GRAPHIC_TYPES, PLATFORMS, cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
+import { mergeFiles, useFileDrop } from "@/lib/useFileDrop";
 import type { GraphicType, Platform } from "@/lib/types";
 
 export function BatchUpload() {
@@ -19,6 +20,14 @@ export function BatchUpload() {
   const [graphicType, setGraphicType] = useState<GraphicType>(GRAPHIC_TYPES[0].value);
   const [platform, setPlatform] = useState<Platform>(PLATFORMS[0].value);
   const [error, setError] = useState<string | null>(null);
+
+  // Dropped files are merged in rather than replacing the selection, so you can
+  // drag several batches from Finder and build the queue up.
+  const addFiles = (incoming: File[]) => {
+    setFiles((prev) => mergeFiles(prev, incoming));
+    setError(null);
+  };
+  const { dragOver, dropHandlers } = useFileDrop(addFiles, { multiple: true });
 
   const submit = async () => {
     if (!files.length) return;
@@ -46,8 +55,14 @@ export function BatchUpload() {
 
       <div className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
         <div
+          {...dropHandlers}
           onClick={() => inputRef.current?.click()}
-          className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-4 text-center transition-colors hover:border-accent/50"
+          className={cn(
+            "flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition-colors",
+            dragOver
+              ? "border-accent bg-accent/10"
+              : "border-border hover:border-accent/50",
+          )}
         >
           <input
             ref={inputRef}
@@ -55,16 +70,19 @@ export function BatchUpload() {
             accept="image/*"
             multiple
             className="hidden"
-            onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+            onChange={(e) => addFiles(Array.from(e.target.files ?? []))}
           />
-          {files.length ? (
+          {dragOver ? (
+            <p className="text-sm font-medium text-accent">Drop to add to the queue</p>
+          ) : files.length ? (
             <p className="text-sm">
               <span className="font-semibold text-accent">{files.length}</span>{" "}
-              file{files.length === 1 ? "" : "s"} selected
+              file{files.length === 1 ? "" : "s"} selected &middot;{" "}
+              <span className="text-muted">drop more or click to add</span>
             </p>
           ) : (
             <p className="text-sm text-muted">
-              Select multiple graphics (10+) to process through the queue
+              Drop graphics here, or click to browse &mdash; 10+ to exercise the queue
             </p>
           )}
         </div>

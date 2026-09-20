@@ -9,6 +9,7 @@ import { Button } from "./ui/Button";
 import { useUploadGraphic } from "@/lib/hooks";
 import { GRAPHIC_TYPES, PLATFORMS, cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
+import { useFileDrop } from "@/lib/useFileDrop";
 
 const PIPELINE_STEPS = [
   "Reading text from the graphic…",
@@ -28,7 +29,6 @@ export function UploadDropzone() {
   const [preview, setPreview] = useState<string | null>(null);
   const [graphicType, setGraphicType] = useState(GRAPHIC_TYPES[0].value);
   const [platform, setPlatform] = useState(PLATFORMS[0].value);
-  const [dragOver, setDragOver] = useState(false);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +38,8 @@ export function UploadDropzone() {
     setPreview(URL.createObjectURL(f));
     setError(null);
   };
+
+  const { dragOver, dropHandlers } = useFileDrop((fs) => choose(fs[0] ?? null));
 
   const submit = async () => {
     if (!file) return;
@@ -71,16 +73,7 @@ export function UploadDropzone() {
       <div className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
         {/* dropzone */}
         <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragOver(false);
-            choose(e.dataTransfer.files?.[0] ?? null);
-          }}
+          {...dropHandlers}
           onClick={() => inputRef.current?.click()}
           className={cn(
             "relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed p-4 text-center transition-colors",
@@ -123,8 +116,11 @@ export function UploadDropzone() {
                 <UploadCloud className="h-6 w-6" />
               </motion.div>
               <p className="text-sm">
-                Drop a graphic here or{" "}
-                <span className="text-primary">browse</span>
+                {dragOver ? (
+                  <span className="font-medium text-primary">Drop to upload</span>
+                ) : (
+                  <>Drop a graphic here or <span className="text-primary">browse</span></>
+                )}
               </p>
               <p className="mt-1 text-xs text-muted">PNG / JPG</p>
             </>
